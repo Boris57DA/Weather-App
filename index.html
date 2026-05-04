@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    </div><div class="page">
+        <div class="bg-orb orb-1" aria-hidden="true"></div>
+        <div class="bg-orb orb-2" aria-hidden="true"></div>
+        <div class="bg-orb orb-3" aria-hidden="true"></div>
+
+        <main class="app" aria-label="Weather application">
+            <header class="app-header">
+                <div class="brand">
+                    <div class="logo" aria-hidden="true">
+                        <span class="logo-dot"></span>
+                        <span class="logo-arc"></span>
+                    </div>
+                    <div class="brand-text">
+                        <p class="brand-title">Weather</p>
+                    </div>
+                </div>
+                <div class="header-meta">
+                    <p class="meta-label">Local time</p>
+                    <p class="meta-value">--:--</p>
+                </div>
+            </header>
+
+            <section class="search-panel" aria-label="City search">
+                <div class="search-input">
+                    <span class="search-icon" aria-hidden="true"></span>
+                    <input type="text" placeholder="Search city" aria-label="Search city">
+                </div>
+                <button class="search-button" type="button">Search</button>
+            </section>
+
+            <section class="weather-grid" aria-label="Weather overview">
+                <article class="weather-card main-card">
+                    <div class="card-header">
+                        <p class="city-name">City Name</p>
+                        <p class="city-region">Country, Region</p>
+                    </div>
+                    <div class="temperature">
+                        <span class="temp-value">--</span>
+                        <span class="temp-unit">°C</span>
+                    </div>
+                    <div class="condition">
+                        <span class="condition-icon" aria-hidden="true"></span>
+                        <div class="condition-text">
+                            <p class="condition-label">Condition</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="weather-card stat-card">
+                    <p class="stat-label">Wind</p>
+                    <p class="stat-value">-- m/s</p>
+                    <p class="stat-helper">Direction --</p>
+                </article>
+
+                <article class="weather-card stat-card">
+                    <p class="stat-label">Feels like</p>
+                    <p class="stat-value">-- °C</p>
+                    <p class="stat-helper">Comfort index</p>
+                </article>
+
+                <article class="weather-card stat-card">
+                    <p class="stat-label">Visibility</p>
+                    <p class="stat-value">-- km</p>
+                    <p class="stat-helper">Air clarity</p>
+                </article>
+            </section>
+
+            <section class="details-panel" aria-label="Extra details">
+                <div class="details-header">
+                    <h2>Today highlights</h2>
+                    <p>Live metrics</p>
+                </div>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <p class="detail-label">Sunrise</p>
+                        <p class="detail-value">--:--</p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Sunset</p>
+                        <p class="detail-value">--:--</p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Humidity</p>
+                        <p class="detail-value">-- %</p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Pressure</p>
+                        <p class="detail-value">-- hPa</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+</body>
+</html>
