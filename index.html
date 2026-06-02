@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
     <div class="page">
         <main class="app" aria-label="Приложение за времето">
+            
             <header class="app-header">
                 <div class="brand">
                     <div class="logo" aria-hidden="true">
@@ -25,51 +25,51 @@
                 </div>
                 <div class="header-meta">
                     <p class="meta-label">Местно време</p>
-                    <p class="meta-value">--:--</p>
+                    <p class="meta-value" id="local-time">--:--</p>
                 </div>
             </header>
 
             <section class="search-panel" aria-label="Търсене на град">
                 <div class="search-input">
                     <span class="search-icon" aria-hidden="true"></span>
-                    <input type="text" placeholder="Търси град..." aria-label="Търси град">
+                    <input type="text" id="city-input" placeholder="Търси град...">
                 </div>
-                <button class="search-button" type="button">Търси</button>
+                <button class="search-button" id="search-btn" type="button">Търси</button>
             </section>
 
             <section class="weather-grid" aria-label="Преглед на времето">
                 <article class="weather-card main-card">
                     <div class="card-header">
-                        <p class="city-name">Име на града</p>
-                        <p class="city-region">Държава</p>
+                        <p class="city-name" id="city-name">Име на града</p>
+                        <p class="city-region" id="city-region">Държава</p>
                     </div>
                     <div class="temperature">
-                        <span class="temp-value">--</span>
+                        <span class="temp-value" id="temperature">--</span>
                         <span class="temp-unit">°C</span>
                     </div>
                     <div class="condition">
                         <span class="condition-icon" aria-hidden="true"></span>
                         <div class="condition-text">
-                            <p class="condition-label">Състояние</p>
+                            <p class="condition-label" id="condition">Състояние</p>
                         </div>
                     </div>
                 </article>
 
                 <article class="weather-card stat-card">
                     <p class="stat-label">Вятър</p>
-                    <p class="stat-value">-- км/ч</p>
+                    <p class="stat-value" id="wind">-- км/ч</p>
                     <p class="stat-helper">Скорост</p>
                 </article>
 
                 <article class="weather-card stat-card">
                     <p class="stat-label">Усеща се</p>
-                    <p class="stat-value">-- °C</p>
+                    <p class="stat-value" id="feels-like">-- °C</p>
                     <p class="stat-helper">Индекс на комфорт</p>
                 </article>
 
                 <article class="weather-card stat-card">
                     <p class="stat-label">Валежи</p>
-                    <p class="stat-value">-- мм</p>
+                    <p class="stat-value" id="precipitation">-- мм</p>
                     <p class="stat-helper">Количество</p>
                 </article>
             </section>
@@ -82,22 +82,23 @@
                 <div class="details-grid">
                     <div class="detail-item">
                         <p class="detail-label">Изгрев</p>
-                        <p class="detail-value">--:--</p>
+                        <p class="detail-value" id="sunrise">--:--</p>
                     </div>
                     <div class="detail-item">
                         <p class="detail-label">Залез</p>
-                        <p class="detail-value">--:--</p>
+                        <p class="detail-value" id="sunset">--:--</p>
                     </div>
                     <div class="detail-item">
                         <p class="detail-label">Влажност</p>
-                        <p class="detail-value">-- %</p>
+                        <p class="detail-value" id="humidity">-- %</p>
                     </div>
                     <div class="detail-item">
                         <p class="detail-label">Налягане</p>
-                        <p class="detail-value">-- хПа</p>
+                        <p class="detail-value" id="pressure">-- хПа</p>
                     </div>
                 </div>
             </section>
+            
         </main>
     </div>
 
