@@ -24,8 +24,11 @@
                     </div>
                 </div>
                 <div class="header-meta">
-                    <p class="meta-label">Местно време</p>
-                    <p class="meta-value" id="local-time">--:--</p>
+                    <button id="theme-btn" class="theme-toggle-btn">🌙 Тъмен режим</button>
+                    <div class="time-container">
+                        <p class="meta-label">Местно време</p>
+                        <p class="meta-value" id="local-time">--:--</p>
+                    </div>
                 </div>
             </header>
 
@@ -38,21 +41,22 @@
             </section>
 
             <section class="weather-grid" aria-label="Преглед на времето">
-                <article class="weather-card main-card">
-                    <div class="card-header">
+                <article class="weather-card main-card" style="flex-wrap: wrap;">
+                    <div class="card-header" style="flex: 1 1 100%;">
                         <p class="city-name" id="city-name">Име на града</p>
                         <p class="city-region" id="city-region">Държава</p>
                     </div>
-                    <div class="temperature">
+                    <div class="temperature" id="temp-box">
                         <span class="temp-value" id="temperature">--</span>
                         <span class="temp-unit">°C</span>
                     </div>
-                    <div class="condition">
-                        <span class="condition-icon" aria-hidden="true"></span>
+                    <div class="condition" id="condition-box">
+                        <span id="condition-icon"></span>
                         <div class="condition-text">
                             <p class="condition-label" id="condition">Състояние</p>
                         </div>
                     </div>
+                    <p id="error-message" style="color: #ff7a59; font-weight: 600; display: none; font-size: 15px; width: 100%; text-align: center; margin-top: 15px; word-break: break-word; line-height: 1.4;"></p>
                 </article>
 
                 <article class="weather-card stat-card">

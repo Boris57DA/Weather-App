@@ -4,6 +4,7 @@
     padding: 0;
 }
 
+/* --- LIGHT MODE VARIABLES (DEFAULT) --- */
 :root {
     --bg: #f5f1ea;
     --ink: #1c1d1f;
@@ -12,6 +13,19 @@
     --card-alt: #faf8f5;
     --border: #e0dcd6;
     --accent: #ff7a59;
+    --btn-hover: rgba(28, 29, 31, 0.05);
+}
+
+/* --- DARK MODE VARIABLES --- */
+body.dark-mode {
+    --bg: #121214;
+    --ink: #f5f5f7;
+    --muted: #a09e9b;
+    --card: #1e1e24;
+    --card-alt: #25252d;
+    --border: #3a3a42;
+    --accent: #ff8e72;
+    --btn-hover: rgba(245, 245, 247, 0.08);
 }
 
 body {
@@ -23,9 +37,9 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Hide the orbs if you left them in the HTML */
 .bg-orb { 
     display: none; 
 }
@@ -40,6 +54,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 32px;
+    transition: background-color 0.3s ease;
 }
 
 /* --- HEADER --- */
@@ -53,12 +68,37 @@ body {
     font-weight: 700;
 }
 .header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+.time-container {
     text-align: right;
 }
+
+.theme-toggle-btn {
+    background-color: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover {
+    background-color: var(--btn-hover);
+    border-color: var(--ink);
+}
+
 .meta-label {
     font-size: 12px;
     text-transform: uppercase;
     color: var(--muted);
+    transition: color 0.3s ease;
 }
 .meta-value {
     font-weight: 600;
@@ -81,6 +121,9 @@ body {
     font-size: 16px;
     font-family: inherit;
     outline: none;
+    background-color: var(--card);
+    color: var(--ink);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 .search-button {
     background-color: var(--accent);
@@ -91,7 +134,7 @@ body {
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: background-color 0.3s ease, opacity 0.2s ease;
 }
 .search-button:hover {
     opacity: 0.9;
@@ -108,6 +151,7 @@ body {
     border-radius: 20px;
     border: 1px solid var(--border);
     background: var(--card);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 .main-card {
     grid-column: span 3;
@@ -117,9 +161,29 @@ body {
     background: var(--card-alt);
 }
 .city-name { font-size: 24px; font-weight: 600; }
-.city-region { color: var(--muted); font-size: 14px; }
+.city-region { color: var(--muted); font-size: 14px; transition: color 0.3s ease; }
 .temperature { font-size: 64px; font-weight: 600; display: flex; }
-.temp-unit { font-size: 24px; color: var(--muted); margin-top: 8px; }
+.temp-unit { font-size: 24px; color: var(--muted); margin-top: 8px; transition: color 0.3s ease; }
+
+/* Styled the condition container to stack the emoji directly above the text */
+.condition {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+}
+
+/* New custom style to make the weather emoji stand out beautifully */
+#condition-icon {
+    font-size: 44px; /* Makes the emoji nice and big */
+    line-height: 1;
+}
+
+.condition-label {
+    font-size: 16px;
+    font-weight: 500;
+}
 
 /* Stat Cards */
 .stat-card {
@@ -128,18 +192,19 @@ body {
     justify-content: space-between;
     min-height: 120px;
 }
-.stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+.stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; transition: color 0.3s ease; }
 .stat-value { font-size: 24px; font-weight: 600; margin: 8px 0; }
-.stat-helper { font-size: 12px; color: var(--muted); }
+.stat-helper { font-size: 12px; color: var(--muted); transition: color 0.3s ease; }
 
 /* --- DETAILS PANEL --- */
 .details-panel {
     background: var(--card-alt);
     border-radius: 24px;
     padding: 24px;
+    transition: background-color 0.3s ease;
 }
 .details-header h2 { font-size: 20px; }
-.details-header p { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+.details-header p { font-size: 14px; color: var(--muted); margin-bottom: 20px; transition: color 0.3s ease; }
 
 .details-grid {
     display: grid;
@@ -151,8 +216,9 @@ body {
     padding: 16px;
     border-radius: 16px;
     border: 1px solid var(--border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-.detail-label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+.detail-label { font-size: 12px; color: var(--muted); text-transform: uppercase; transition: color 0.3s ease; }
 .detail-value { font-size: 18px; font-weight: 600; margin-top: 8px; }
 
 /* --- RESPONSIVE DESIGN --- */

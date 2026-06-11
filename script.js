@@ -1,9 +1,17 @@
-// DOM елементи
+// --- 1. DOM ELEMENTS SELECTION ---
 const searchInput = document.getElementById('city-input');
 const searchButton = document.getElementById('search-btn');
+const themeButton = document.getElementById('theme-btn'); 
 
 const cityNameEl = document.getElementById('city-name');
 const cityRegionEl = document.getElementById('city-region');
+const errorEl = document.getElementById('error-message');
+
+const tempBox = document.getElementById('temp-box');
+const conditionBox = document.getElementById('condition-box');
+
+// Selected the new dedicated element for the weather emoji
+const conditionIconEl = document.getElementById('condition-icon');
 const temperatureEl = document.getElementById('temperature');
 const conditionEl = document.getElementById('condition');
 
@@ -17,22 +25,34 @@ const humidityEl = document.getElementById('humidity');
 const pressureEl = document.getElementById('pressure');
 const timeEl = document.getElementById('local-time');
 
-// главна функция за визмане на времето
+// --- 2. MAIN WEATHER FUNCTION ---
 async function getWeather(city) {
     try {
-        // Изчистваме старото търсене от полето
         searchInput.value = '';
 
-        // Намираме координатите. 
-        // Използваме encodeURIComponent, за да моеж ако някой град е със интервал или специални символи
+        errorEl.style.display = 'none';
+        cityRegionEl.style.display = 'block';
+        tempBox.style.display = 'flex';
+        conditionBox.style.display = 'flex';
+
+        let displayCity = city;
+        if (city.length > 9) {
+            displayCity = city.substring(0, 9) + '...';
+        }
+
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=bg&format=json`;
         const geoResponse = await fetch(geoUrl);
         const geoData = await geoResponse.json();
 
-        // Проверяваме дали градът е намерен
-        if (!geoData.results || geoData.results.length === 0)
-    {
-            alert(`Градът не бе намерен "${city}". Опитайте отново!`);
+        if (!geoData.results || geoData.results.length === 0) {
+            clearUI(); 
+            cityNameEl.textContent = "Грешка";
+            cityRegionEl.style.display = 'none';
+            tempBox.style.display = 'none';
+            conditionBox.style.display = 'none';
+
+            errorEl.textContent = `Градът "${displayCity}" не бе намерен! Опитайте отново.`;
+            errorEl.style.display = 'block';
             return;
         }
 
@@ -40,28 +60,35 @@ async function getWeather(city) {
         const lat = location.latitude;
         const lon = location.longitude;
 
-        // Взимаме самото време чрез координатите
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
         
-        //Рефрешва се страницата
         updateUI(location, weatherData);
 
     } catch (error) {
-        // съобщение за грешка ако нещо не работи
-        alert("Възникна техническа грешка: " + error.message);
+        clearUI();
+        cityNameEl.textContent = "Грешка";
+        cityRegionEl.style.display = 'none';
+        tempBox.style.display = 'none';
+        conditionBox.style.display = 'none';
+        
+        errorEl.textContent = "Възникна technical грешка с връзката!";
+        errorEl.style.display = 'block';
     }
 }
 
-// --- 3. ФУНКЦИЯ ЗА ПРОМЯНА НА ТЕКСТА В HTML ---
+// --- 3. UI RENDERING FUNCTIONS ---
 function updateUI(location, weather) {
+    const code = weather.current.weather_code;
+
     cityNameEl.textContent = location.name;
-    // Ако държавата липсва, показваме празен текст, за да не пише "undefined"
     cityRegionEl.textContent = location.country || ""; 
     temperatureEl.textContent = Math.round(weather.current.temperature_2m);
     
-    conditionEl.textContent = getWeatherCondition(weather.current.weather_code);
+    // Updates the HTML elements with separated emoji and translated text
+    conditionIconEl.textContent = getWeatherEmoji(code);
+    conditionEl.textContent = getWeatherText(code);
 
     windEl.textContent = weather.current.wind_speed_10m + " км/ч";
     feelsLikeEl.textContent = Math.round(weather.current.apparent_temperature) + " °C";
@@ -75,10 +102,38 @@ function updateUI(location, weather) {
     timeEl.textContent = formatTime(weather.current.time);
 }
 
-// --- 4. ПОМОЩНИ ФУНКЦИИ ---
-function getWeatherCondition(code) {
+function clearUI() {
+    windEl.textContent = "-- км/ч";
+    feelsLikeEl.textContent = "-- °C";
+    precipitationEl.textContent = "-- мм";
+    sunriseEl.textContent = "--:--";
+    sunsetEl.textContent = "--:--";
+    humidityEl.textContent = "-- %";
+    pressureEl.textContent = "-- хПа";
+    timeEl.textContent = "--:--";
+}
+
+// --- 4. HELPER UTILITIES ---
+// Helper utility function that handles only the emojis
+function getWeatherEmoji(code) {
+    if (code === 0) return "☀️";
+    if (code === 1) return "🌤️";
+    if (code === 2) return "⛅";
+    if (code === 3) return "☁️";
+    if (code === 45 || code === 48) return "🌫️";
+    if (code >= 51 && code <= 55) return "🌧️";
+    if (code >= 61 && code <= 65) return "🌧️";
+    if (code >= 71 && code <= 75) return "❄️";
+    if (code >= 95) return "⛈️";
+    return "❓";
+}
+
+// Helper utility function that handles only the translated texts
+function getWeatherText(code) {
     if (code === 0) return "Ясно небе";
-    if (code === 1 || code === 2 || code === 3) return "Променлива облачност";
+    if (code === 1) return "Преобладаващо ясно";
+    if (code === 2) return "Променлива облачност";
+    if (code === 3) return "Значителна облачност";
     if (code === 45 || code === 48) return "Мъгла";
     if (code >= 51 && code <= 55) return "Слаб дъжд / Ръмеж";
     if (code >= 61 && code <= 65) return "Дъжд";
@@ -88,7 +143,6 @@ function getWeatherCondition(code) {
 }
 
 function formatTime(timeString) {
-    // Ако API-то не върне час по някаква причина, връщаме празен текст
     if (!timeString) return "--:--"; 
     
     const date = new Date(timeString);
@@ -101,24 +155,42 @@ function formatTime(timeString) {
     return hours + ":" + minutes;
 }
 
-// --- 5. СЪБИТИЯ (EVENTS) ---
-// При клик на бутона
-searchButton.addEventListener('click', function() {
+function handleSearch() {
     const city = searchInput.value.trim();
-    if (city !== "") {
+    
+    if (city === "") {
+        clearUI();
+        cityNameEl.textContent = "Грешка";
+        cityRegionEl.style.display = 'none';
+        tempBox.style.display = 'none';
+        conditionBox.style.display = 'none';
+        
+        errorEl.textContent = "Невалиден вход! Моля, въведете град.";
+        errorEl.style.display = 'block';
+    } else {
         getWeather(city);
     }
+}
+
+// --- 5. EVENT LISTENERS ---
+searchButton.addEventListener('click', function() {
+    handleSearch();
 });
 
-// При натискане на Enter
 searchInput.addEventListener('keypress', function(event) {
     if (event.key === 'Enter') {
-        const city = searchInput.value.trim();
-        if (city !== "") {
-            getWeather(city);
-        }
+        handleSearch();
     }
 });
 
-// Зареждаме София при първоначално отваряне
+themeButton.addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
+    
+    if (document.body.classList.contains('dark-mode')) {
+        themeButton.textContent = "☀️ Светъл режим";
+    } else {
+        themeButton.textContent = "🌙 Тъмен режим";
+    }
+});
+
 getWeather('София');
