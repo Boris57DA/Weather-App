@@ -1,58 +1,60 @@
-// --- 1. DOM ELEMENTS SELECTION ---
-const searchInput = document.getElementById('city-input');
-const searchButton = document.getElementById('search-btn');
-const themeButton = document.getElementById('theme-btn'); 
-
-const cityNameEl = document.getElementById('city-name');
-const cityRegionEl = document.getElementById('city-region');
-const errorEl = document.getElementById('error-message');
-
-const tempBox = document.getElementById('temp-box');
-const conditionBox = document.getElementById('condition-box');
-
-// Selected the new dedicated element for the weather emoji
-const conditionIconEl = document.getElementById('condition-icon');
-const temperatureEl = document.getElementById('temperature');
-const conditionEl = document.getElementById('condition');
-
-const windEl = document.getElementById('wind');
-const feelsLikeEl = document.getElementById('feels-like');
-const precipitationEl = document.getElementById('precipitation');
-
-const sunriseEl = document.getElementById('sunrise');
-const sunsetEl = document.getElementById('sunset');
-const humidityEl = document.getElementById('humidity');
-const pressureEl = document.getElementById('pressure');
-const timeEl = document.getElementById('local-time');
+// --- 1. DOM ELEMENTS SELECTION (CLEANED UP IN A SINGLE OBJECT) ---
+const DOM = {
+    searchInput: document.getElementById('city-input'),
+    searchButton: document.getElementById('search-btn'),
+    themeButton: document.getElementById('theme-btn'),
+    cityName: document.getElementById('city-name'),
+    cityRegion: document.getElementById('city-region'),
+    error: document.getElementById('error-message'),
+    tempBox: document.getElementById('temp-box'),
+    conditionBox: document.getElementById('condition-box'),
+    conditionIcon: document.getElementById('condition-icon'),
+    temperature: document.getElementById('temperature'),
+    condition: document.getElementById('condition'),
+    wind: document.getElementById('wind'),
+    feelsLike: document.getElementById('feels-like'),
+    precipitation: document.getElementById('precipitation'),
+    sunrise: document.getElementById('sunrise'),
+    sunset: document.getElementById('sunset'),
+    humidity: document.getElementById('humidity'),
+    pressure: document.getElementById('pressure'),
+    time: document.getElementById('local-time')
+};
 
 // --- 2. MAIN WEATHER FUNCTION ---
 async function getWeather(city) {
     try {
-        searchInput.value = '';
+        // Clear the input field for the next search
+        DOM.searchInput.value = '';
 
-        errorEl.style.display = 'none';
-        cityRegionEl.style.display = 'block';
-        tempBox.style.display = 'flex';
-        conditionBox.style.display = 'flex';
+        // Reset the layout visibility before a new search (BUG FIX PART 1)
+        DOM.error.style.display = 'none';
+        DOM.cityRegion.style.display = 'block';
+        DOM.tempBox.style.display = 'flex';
+        DOM.conditionBox.style.display = 'flex';
 
+        // Check if the city text length is higher than 9 characters, if so, cut it and add "..."
         let displayCity = city;
         if (city.length > 9) {
             displayCity = city.substring(0, 9) + '...';
         }
 
+        // STEP 1: Fetch geographical coordinates (latitude and longitude)
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=bg&format=json`;
         const geoResponse = await fetch(geoUrl);
         const geoData = await geoResponse.json();
 
+        // Check if the city results exist in the API database
         if (!geoData.results || geoData.results.length === 0) {
-            clearUI(); 
-            cityNameEl.textContent = "Грешка";
-            cityRegionEl.style.display = 'none';
-            tempBox.style.display = 'none';
-            conditionBox.style.display = 'none';
+            clearUI(); // Reset all display metrics to prevent old data leaks (BUG FIX PART 2)
+            DOM.cityName.textContent = "Грешка";
+            DOM.cityRegion.style.display = 'none';
+            DOM.tempBox.style.display = 'none';
+            DOM.conditionBox.style.display = 'none';
 
-            errorEl.textContent = `Градът "${displayCity}" не бе намерен! Опитайте отново.`;
-            errorEl.style.display = 'block';
+            // Show customized error message with a trimmed city name
+            DOM.error.textContent = `Градът "${displayCity}" не бе намерен! Опитайте отново.`;
+            DOM.error.style.display = 'block';
             return;
         }
 
@@ -60,21 +62,23 @@ async function getWeather(city) {
         const lat = location.latitude;
         const lon = location.longitude;
 
+        // STEP 2: Fetch specific weather conditions using coordinates
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
         
+        // STEP 3: Pass data to render on the screen
         updateUI(location, weatherData);
 
     } catch (error) {
         clearUI();
-        cityNameEl.textContent = "Грешка";
-        cityRegionEl.style.display = 'none';
-        tempBox.style.display = 'none';
-        conditionBox.style.display = 'none';
+        DOM.cityName.textContent = "Грешка";
+        DOM.cityRegion.style.display = 'none';
+        DOM.tempBox.style.display = 'none';
+        DOM.conditionBox.style.display = 'none';
         
-        errorEl.textContent = "Възникна technical грешка с връзката!";
-        errorEl.style.display = 'block';
+        DOM.error.textContent = "Възникна техническа грешка с връзката!";
+        DOM.error.style.display = 'block';
     }
 }
 
@@ -82,39 +86,45 @@ async function getWeather(city) {
 function updateUI(location, weather) {
     const code = weather.current.weather_code;
 
-    cityNameEl.textContent = location.name;
-    cityRegionEl.textContent = location.country || ""; 
-    temperatureEl.textContent = Math.round(weather.current.temperature_2m);
+    DOM.cityName.textContent = location.name;
+    DOM.cityRegion.textContent = location.country || ""; 
+    DOM.temperature.textContent = Math.round(weather.current.temperature_2m);
     
     // Updates the HTML elements with separated emoji and translated text
-    conditionIconEl.textContent = getWeatherEmoji(code);
-    conditionEl.textContent = getWeatherText(code);
+    DOM.conditionIcon.textContent = getWeatherEmoji(code);
+    DOM.condition.textContent = getWeatherText(code);
 
-    windEl.textContent = weather.current.wind_speed_10m + " км/ч";
-    feelsLikeEl.textContent = Math.round(weather.current.apparent_temperature) + " °C";
-    precipitationEl.textContent = weather.current.precipitation + " мм";
+    // Append standard weather metrics to HTML boxes
+    DOM.wind.textContent = weather.current.wind_speed_10m + " км/ч";
+    DOM.feelsLike.textContent = Math.round(weather.current.apparent_temperature) + " °C";
+    DOM.precipitation.textContent = weather.current.precipitation + " мм";
 
-    humidityEl.textContent = weather.current.relative_humidity_2m + " %";
-    pressureEl.textContent = Math.round(weather.current.surface_pressure) + " хПа";
+    DOM.humidity.textContent = weather.current.relative_humidity_2m + " %";
+    DOM.pressure.textContent = Math.round(weather.current.surface_pressure) + " хПа";
 
-    sunriseEl.textContent = formatTime(weather.daily.sunrise[0]);
-    sunsetEl.textContent = formatTime(weather.daily.sunset[0]);
-    timeEl.textContent = formatTime(weather.current.time);
+    // Format long date strings into standard hours and minutes
+    DOM.sunrise.textContent = formatTime(weather.daily.sunrise[0]);
+    DOM.sunset.textContent = formatTime(weather.daily.sunset[0]);
+    DOM.time.textContent = formatTime(weather.current.time);
 }
 
+// Resets all display metrics to dashes and clears main weather fields (BUG FIX SOLVED)
+// This functions stops old data from visible layout placement during errors
 function clearUI() {
-    windEl.textContent = "-- км/ч";
-    feelsLikeEl.textContent = "-- °C";
-    precipitationEl.textContent = "-- мм";
-    sunriseEl.textContent = "--:--";
-    sunsetEl.textContent = "--:--";
-    humidityEl.textContent = "-- %";
-    pressureEl.textContent = "-- хПа";
-    timeEl.textContent = "--:--";
+    DOM.conditionIcon.textContent = "";
+    DOM.condition.textContent = "";
+    DOM.wind.textContent = "-- км/ч";
+    DOM.feelsLike.textContent = "-- °C";
+    DOM.precipitation.textContent = "-- мм";
+    DOM.sunrise.textContent = "--:--";
+    DOM.sunset.textContent = "--:--";
+    DOM.humidity.textContent = "-- %";
+    DOM.pressure.textContent = "-- хПа";
+    DOM.time.textContent = "--:--";
 }
 
 // --- 4. HELPER UTILITIES ---
-// Helper utility function that handles only the emojis
+// Maps the numerical Open-Meteo weather code to beautiful emojis
 function getWeatherEmoji(code) {
     if (code === 0) return "☀️";
     if (code === 1) return "🌤️";
@@ -128,7 +138,7 @@ function getWeatherEmoji(code) {
     return "❓";
 }
 
-// Helper utility function that handles only the translated texts
+// Maps the numerical Open-Meteo weather code to Bulgarian translated texts
 function getWeatherText(code) {
     if (code === 0) return "Ясно небе";
     if (code === 1) return "Преобладаващо ясно";
@@ -155,42 +165,47 @@ function formatTime(timeString) {
     return hours + ":" + minutes;
 }
 
+// Function to handle empty inputs or spaces safely
 function handleSearch() {
-    const city = searchInput.value.trim();
+    const city = DOM.searchInput.value.trim();
     
     if (city === "") {
         clearUI();
-        cityNameEl.textContent = "Грешка";
-        cityRegionEl.style.display = 'none';
-        tempBox.style.display = 'none';
-        conditionBox.style.display = 'none';
+        DOM.cityName.textContent = "Грешка";
+        DOM.cityRegion.style.display = 'none';
+        DOM.tempBox.style.display = 'none';
+        DOM.conditionBox.style.display = 'none';
         
-        errorEl.textContent = "Невалиден вход! Моля, въведете град.";
-        errorEl.style.display = 'block';
+        DOM.error.textContent = "Невалиден вход! Моля, въведете град.";
+        DOM.error.style.display = 'block';
     } else {
         getWeather(city);
     }
 }
 
 // --- 5. EVENT LISTENERS ---
-searchButton.addEventListener('click', function() {
+// Trigger search action on button click
+DOM.searchButton.addEventListener('click', function() {
     handleSearch();
 });
 
-searchInput.addEventListener('keypress', function(event) {
+// Trigger search action on pressing the Enter key
+DOM.searchInput.addEventListener('keypress', function(event) {
     if (event.key === 'Enter') {
         handleSearch();
     }
 });
 
-themeButton.addEventListener('click', function() {
+// Click event for toggling Light/Dark theme smoothly
+DOM.themeButton.addEventListener('click', function() {
     document.body.classList.toggle('dark-mode');
     
     if (document.body.classList.contains('dark-mode')) {
-        themeButton.textContent = "☀️ Светъл режим";
+        DOM.themeButton.textContent = "☀️ Светъл режим";
     } else {
-        themeButton.textContent = "🌙 Тъмен режим";
+        DOM.themeButton.textContent = "🌙 Тъмен режим";
     }
 });
 
+// Run default search for Sofia when the application opens
 getWeather('София');

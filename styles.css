@@ -165,7 +165,6 @@ body {
 .temperature { font-size: 64px; font-weight: 600; display: flex; }
 .temp-unit { font-size: 24px; color: var(--muted); margin-top: 8px; transition: color 0.3s ease; }
 
-/* Styled the condition container to stack the emoji directly above the text */
 .condition {
     display: flex;
     flex-direction: column;
@@ -174,9 +173,8 @@ body {
     gap: 6px;
 }
 
-/* New custom style to make the weather emoji stand out beautifully */
 #condition-icon {
-    font-size: 44px; /* Makes the emoji nice and big */
+    font-size: 44px;
     line-height: 1;
 }
 
@@ -221,28 +219,68 @@ body {
 .detail-label { font-size: 12px; color: var(--muted); text-transform: uppercase; transition: color 0.3s ease; }
 .detail-value { font-size: 18px; font-weight: 600; margin-top: 8px; }
 
-/* --- RESPONSIVE DESIGN --- */
+/* --- RESPONSIVE DESIGN (FULLY OPTIMIZED FOR MOBILE PHONE) --- */
 @media (max-width: 768px) {
-    .weather-grid {
-        grid-template-columns: 1fr;
-    }
-    .main-card {
-        grid-column: span 1;
-        flex-direction: column;
-        align-items: flex-start;
+    .app {
+        padding: 16px; /* Decrease main container spacing on small mobile screens */
         gap: 20px;
     }
+
+    .app-header {
+        align-items: flex-start;
+    }
+
+    .weather-grid {
+        /* FIX: Render cards side by side in pairs of 2 on phones */
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .main-card {
+        /* Keep main card covering full phone width grid rows */
+        grid-column: span 2; 
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+        padding: 20px 16px; /* Tighten up spacing to make it less bulky */
+    }
+
+    .card-header {
+        text-align: center;
+    }
+
+    .temperature {
+        justify-content: center;
+        margin-right: 0;
+        font-size: 56px; /* Make temperature text slightly smaller on mobile viewports */
+    }
+
+    .stat-card {
+        padding: 16px;
+        min-height: 100px;
+    }
+
+    .stat-value {
+        font-size: 20px; /* Scale down standard font sizes slightly */
+    }
+
+    .details-panel {
+        padding: 16px;
+    }
+
     .details-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
     }
+
     .search-panel {
         flex-direction: column;
+        gap: 8px;
     }
-    .search-input {
-        width: 100%;
-    }
+
     .search-button {
         width: 100%;
-        padding: 16px;
+        padding: 14px;
     }
 }
