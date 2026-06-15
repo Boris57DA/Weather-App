@@ -40,14 +40,17 @@
                 <button class="search-button" id="search-btn" type="button">Търси</button>
             </section>
 
+            <div id="history-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: -16px; margin-bottom: 16px;"></div>
+
             <section class="weather-grid" aria-label="Преглед на времето">
                 <article class="weather-card main-card" style="flex-wrap: wrap;">
                     <div class="card-header" style="flex: 1 1 100%;">
                         <p class="city-name" id="city-name">Име на града</p>
                         <p class="city-region" id="city-region">Държава</p>
-                        
-                        <button id="unit-toggle-btn" style="background: transparent; border: 1.5px solid var(--border); padding: 6px 12px; border-radius: 20px; color: var(--ink); cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600; margin-top: 10px; transition: all 0.2s ease;">Промени на °F</button>
                     </div>
+                    
+                    <button id="unit-toggle-btn" class="unit-toggle-btn">Промени на °F</button>
+
                     <div class="temperature" id="temp-box">
                         <span class="temp-value" id="temperature">--</span>
                         <span class="temp-unit">°</span>

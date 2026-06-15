@@ -159,11 +159,33 @@ body {
     justify-content: space-between;
     align-items: center;
     background: var(--card-alt);
+    position: relative; /* REQUIRED: Anchor frame for the absolute position button below */
 }
 .city-name { font-size: 24px; font-weight: 600; }
 .city-region { color: var(--muted); font-size: 14px; transition: color 0.3s ease; }
 .temperature { font-size: 64px; font-weight: 600; display: flex; }
 .temp-unit { font-size: 24px; color: var(--muted); margin-top: 8px; transition: color 0.3s ease; }
+
+/* Custom absolute styling to place the metric button in the top right corner */
+.unit-toggle-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background-color: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.unit-toggle-btn:hover {
+    background-color: var(--btn-hover);
+    border-color: var(--ink);
+}
 
 .condition {
     display: flex;
@@ -222,7 +244,7 @@ body {
 /* --- RESPONSIVE DESIGN (FULLY OPTIMIZED FOR MOBILE PHONE) --- */
 @media (max-width: 768px) {
     .app {
-        padding: 16px; /* Decrease main container spacing on small mobile screens */
+        padding: 16px;
         gap: 20px;
     }
 
@@ -231,29 +253,33 @@ body {
     }
 
     .weather-grid {
-        /* FIX: Render cards side by side in pairs of 2 on phones */
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
     .main-card {
-        /* Keep main card covering full phone width grid rows */
         grid-column: span 2; 
         flex-direction: column;
         align-items: center;
         text-align: center;
         gap: 16px;
-        padding: 20px 16px; /* Tighten up spacing to make it less bulky */
+        padding: 20px 16px; 
     }
 
     .card-header {
         text-align: center;
     }
 
+    /* Reset absolute position on phone to fit nicely into the center column stack */
+    .unit-toggle-btn {
+        position: static;
+        margin-top: 4px;
+    }
+
     .temperature {
         justify-content: center;
         margin-right: 0;
-        font-size: 56px; /* Make temperature text slightly smaller on mobile viewports */
+        font-size: 56px; 
     }
 
     .stat-card {
@@ -262,7 +288,7 @@ body {
     }
 
     .stat-value {
-        font-size: 20px; /* Scale down standard font sizes slightly */
+        font-size: 20px; 
     }
 
     .details-panel {
