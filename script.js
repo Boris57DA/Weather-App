@@ -6,8 +6,9 @@ const DOM = {
     unitButton: document.getElementById('unit-toggle-btn'),
     historyContainer: document.getElementById('history-container'),
     geoButton: document.getElementById('geo-btn'),
-    hourlyContainer: document.getElementById('hourly-container'), // NEW
-    dailyContainer: document.getElementById('daily-container'),   // NEW
+    hourlyContainer: document.getElementById('hourly-container'),
+    dailyContainer: document.getElementById('daily-container'),
+    lightningLayer: document.getElementById('lightning-layer'),
     cityName: document.getElementById('city-name'),
     cityRegion: document.getElementById('city-region'),
     error: document.getElementById('error-message'),
@@ -29,9 +30,8 @@ const DOM = {
 // --- 2. GLOBAL STATES ---
 let currentUnit = 'C'; 
 let searchHistory = JSON.parse(localStorage.getItem('weatherHistory')) || [];
-
-// Master memory tracking object storage cache to trigger conversions cleanly
 let weatherCache = null;
+let lightningInterval = null;
 
 // --- 3. MAIN WEATHER FUNCTIONS ---
 async function getWeather(city) {
@@ -61,20 +61,12 @@ async function getWeather(city) {
         }
 
         const location = geoData.results[0];
-        
-        // REFACTORED URL: Appended deep extraction params for hourly metrics and 5-day daily forecasts logs
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
         
         addToHistory(location.name);
-
-        weatherCache = {
-            cityName: location.name,
-            cityRegion: location.country || "",
-            data: weatherData
-        };
-
+        weatherCache = { cityName: location.name, cityRegion: location.country || "", data: weatherData };
         updateUI();
 
     } catch (error) {
@@ -110,12 +102,7 @@ async function getWeatherByCoordinates(lat, lon) {
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
 
-        weatherCache = {
-            cityName: resolvedCityName,
-            cityRegion: "Текущо местоположение",
-            data: weatherData
-        };
-
+        weatherCache = { cityName: resolvedCityName, cityRegion: "Текущо местоположение", data: weatherData };
         updateUI();
 
     } catch (error) {
@@ -145,10 +132,32 @@ function updateUI() {
     DOM.sunset.textContent = formatTime(weatherData.daily.sunset[0]);
     DOM.time.textContent = formatTime(weatherData.current.time);
 
-    // Call modular rendering macros synchronously
+    updateAmbientTheme(code);
     renderTemperaturesOnly();
     renderHourlyForecast(weatherData.hourly);
     renderDailyForecast(weatherData.daily);
+}
+
+function updateAmbientTheme(code) {
+    document.body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-stormy');
+    clearInterval(lightningInterval);
+
+    if (code === 0 || code === 1) {
+        document.body.classList.add('weather-sunny');
+    } else if (code === 2 || code === 3 || code === 45 || code === 48) {
+        document.body.classList.add('weather-cloudy');
+    } else if ((code >= 51 && code <= 65) || (code >= 71 && code <= 75)) {
+        document.body.classList.add('weather-rainy');
+    } else if (code >= 95) {
+        document.body.classList.add('weather-stormy');
+        
+        lightningInterval = setInterval(() => {
+            if (Math.random() > 0.4) {
+                DOM.lightningLayer.classList.add('active');
+                setTimeout(() => DOM.lightningLayer.classList.remove('active'), 500);
+            }
+        }, 4000);
+    }
 }
 
 function renderTemperaturesOnly() {
@@ -168,14 +177,10 @@ function renderTemperaturesOnly() {
     DOM.feelsLike.textContent = `${feelsLike} °${currentUnit}`;
 }
 
-// NEW: Generates 24 horizontal hourly forecast card badges dynamically
 function renderHourlyForecast(hourlyData) {
     DOM.hourlyContainer.innerHTML = '';
-    
-    // Parse out current localized hour slot index
     const currentHourIndex = new Date().getHours();
     
-    // Slice data loops for the next 24 chronological hours sequence
     for (let i = currentHourIndex; i < currentHourIndex + 24; i++) {
         if (!hourlyData.time[i]) break;
 
@@ -196,11 +201,9 @@ function renderHourlyForecast(hourlyData) {
     }
 }
 
-// NEW: Generates rows mapping out the upcoming 5-day layout trends sequentially
 function renderDailyForecast(dailyData) {
     DOM.dailyContainer.innerHTML = '';
 
-    // Loop through indexes 1 to 5 to fetch the subsequent days ahead cleanly (skipping index 0 which is today)
     for (let i = 1; i <= 5; i++) {
         if (!dailyData.time[i]) break;
 
@@ -244,6 +247,8 @@ function clearUI() {
     DOM.time.textContent = "--:--";
     DOM.hourlyContainer.innerHTML = '';
     DOM.dailyContainer.innerHTML = '';
+    document.body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-stormy');
+    clearInterval(lightningInterval);
 }
 
 // --- 5. LOCALSTORAGE HISTORY LOGIC ---
@@ -260,13 +265,9 @@ function renderHistory() {
     searchHistory.forEach(city => {
         const badge = document.createElement('button');
         badge.textContent = city;
-        badge.style.cssText = `
-            background-color: var(--card-alt); color: var(--ink); border: 1px solid var(--border);
-            padding: 6px 12px; border-radius: 12px; cursor: pointer; font-family: inherit;
-            font-size: 12px; font-weight: 500; transition: all 0.2s ease;
-        `;
-        badge.addEventListener('mouseover', () => badge.style.borderColor = 'var(--ink)');
-        badge.addEventListener('mouseout', () => badge.style.borderColor = 'var(--border)');
+        badge.className = 'theme-toggle-btn';
+        badge.style.padding = '6px 14px'; 
+        badge.style.fontSize = '12px';
         badge.addEventListener('click', () => getWeather(city));
         DOM.historyContainer.appendChild(badge);
     });
@@ -286,7 +287,6 @@ function getWeatherEmoji(code) {
     return "❓";
 }
 
-// Clean status summaries mapper
 function getWeatherText(code) {
     if (code === 0) return "Ясно небе";
     if (code === 1) return "Предимно ясно";
@@ -334,14 +334,9 @@ DOM.themeButton.addEventListener('click', function() {
 });
 
 DOM.unitButton.addEventListener('click', function() {
-    if (currentUnit === 'C') {
-        currentUnit = 'F';
-        DOM.unitButton.textContent = "Промени на °C";
-    } else {
-        currentUnit = 'C';
-        DOM.unitButton.textContent = "Промени на °F";
-    }
-    updateUI(); // Refreshes everything natively from master object memory scopes
+    currentUnit = (currentUnit === 'C') ? 'F' : 'C';
+    DOM.unitButton.textContent = `Промени на °${currentUnit === 'C' ? 'F' : 'C'}`;
+    updateUI(); 
 });
 
 DOM.geoButton.addEventListener('click', function() {

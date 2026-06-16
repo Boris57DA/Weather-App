@@ -10,8 +10,13 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="lightning-flash" id="lightning-layer"></div>
+
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
     <div class="page">
-        <main class="app" aria-label="Приложение за времето">
+        <main class="app" id="app-container" aria-label="Приложение за времето">
             
             <header class="app-header">
                 <div class="brand">
@@ -39,7 +44,7 @@
                 </div>
 
                 <button class="geo-button" id="geo-btn" type="button" aria-label="Използвай текуща локация">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
@@ -48,11 +53,11 @@
                 <button class="search-button" id="search-btn" type="button">Търси</button>
             </section>
 
-            <div id="history-container" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: -16px; margin-bottom: 16px;"></div>
+            <div id="history-container" class="history-panel"></div>
 
             <section class="weather-grid" aria-label="Преглед на времето">
-                <article class="weather-card main-card" style="flex-wrap: wrap;">
-                    <div class="card-header" style="flex: 1 1 100%;">
+                <article class="weather-card main-card">
+                    <div class="card-header">
                         <p class="city-name" id="city-name">Име на града</p>
                         <p class="city-region" id="city-region">Държава</p>
                     </div>
@@ -69,7 +74,7 @@
                             <p class="condition-label" id="condition">Състояние</p>
                         </div>
                     </div>
-                    <p id="error-message" style="color: #ff7a59; font-weight: 600; display: none; font-size: 15px; width: 100%; text-align: center; margin-top: 15px; word-break: break-word; line-height: 1.4;"></p>
+                    <p id="error-message" class="error-text"></p>
                 </article>
 
                 <article class="weather-card stat-card">
@@ -91,26 +96,20 @@
                 </article>
             </section>
 
-            <!-- NEW: Hourly Forecast Section -->
             <section class="forecast-panel" aria-label="Почасова прогноза">
                 <div class="panel-header">
                     <h2>Почасова прогноза</h2>
                     <p>Следващите 24 часа</p>
                 </div>
-                <div class="hourly-scroll-container" id="hourly-container">
-                    <!-- Cards generated dynamically via JavaScript -->
-                </div>
+                <div class="hourly-scroll-container" id="hourly-container"></div>
             </section>
 
-            <!-- NEW: 5-Day Forecast Section -->
             <section class="forecast-panel" aria-label="Петдневна прогноза">
                 <div class="panel-header">
                     <h2>Прогноза за 5 дни</h2>
                     <p>Тенденция по дни</p>
                 </div>
-                <div class="daily-list-container" id="daily-container">
-                    <!-- Rows generated dynamically via JavaScript -->
-                </div>
+                <div class="daily-list-container" id="daily-container"></div>
             </section>
 
             <section class="details-panel" aria-label="Допълнителни детайли">
