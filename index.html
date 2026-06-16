@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="weather-default">
     <div class="lightning-flash" id="lightning-layer"></div>
 
     <div class="ambient-glow glow-1"></div>
@@ -38,9 +38,12 @@
             </header>
 
             <section class="search-panel" aria-label="Търсене на град">
-                <div class="search-input">
-                    <span class="search-icon" aria-hidden="true"></span>
-                    <input type="text" id="city-input" placeholder="Търси град...">
+                <div class="search-wrapper">
+                    <div class="search-input">
+                        <span class="search-icon" aria-hidden="true"></span>
+                        <input type="text" id="city-input" placeholder="Търси град...">
+                    </div>
+                    <div id="error-message" class="error-toast"></div>
                 </div>
 
                 <button class="geo-button" id="geo-btn" type="button" aria-label="Използвай текуща локация">
@@ -55,87 +58,97 @@
 
             <div id="history-container" class="history-panel"></div>
 
-            <section class="weather-grid" aria-label="Преглед на времето">
-                <article class="weather-card main-card">
-                    <div class="card-header">
-                        <p class="city-name" id="city-name">Име на града</p>
-                        <p class="city-region" id="city-region">Държава</p>
-                    </div>
-                    
-                    <button id="unit-toggle-btn" class="unit-toggle-btn">Промени на °F</button>
+            <div id="app-loader" class="loader-container">
+                <div class="spinner"></div>
+                <p class="loader-text">Зареждане...</p>
+            </div>
 
-                    <div class="temperature" id="temp-box">
-                        <span class="temp-value" id="temperature">--</span>
-                        <span class="temp-unit">°</span>
+            <div id="main-content" class="content-wrapper hidden">
+                <section class="weather-grid" aria-label="Преглед на времето">
+                    <article class="weather-card main-card">
+                        <div class="card-left">
+                            <div class="card-header">
+                                <p class="city-name" id="city-name">Име на града</p>
+                                <p class="city-region" id="city-region">Държава</p>
+                            </div>
+                            
+                            <div class="temperature" id="temp-box">
+                                <span class="temp-value" id="temperature">--</span>
+                                <span class="temp-unit">°</span>
+                            </div>
+                        </div>
+
+                        <div class="card-right">
+                            <button id="unit-toggle-btn" class="unit-toggle-btn">Промени на °F</button>
+                            <div class="condition" id="condition-box">
+                                <span id="condition-icon"></span>
+                                <div class="condition-text">
+                                    <p class="condition-label" id="condition">Състояние</p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="weather-card stat-card">
+                        <p class="stat-label">Вятър</p>
+                        <p class="stat-value" id="wind">-- км/ч</p>
+                        <p class="stat-helper">Скорост</p>
+                    </article>
+
+                    <article class="weather-card stat-card">
+                        <p class="stat-label">Усеща се</p>
+                        <p class="stat-value" id="feels-like">-- °C</p>
+                        <p class="stat-helper">Индекс на комфорт</p>
+                    </article>
+
+                    <article class="weather-card stat-card">
+                        <p class="stat-label">Валежи</p>
+                        <p class="stat-value" id="precipitation">-- мм</p>
+                        <p class="stat-helper">Количество</p>
+                    </article>
+                </section>
+
+                <section class="forecast-panel" aria-label="Почасова прогноза">
+                    <div class="panel-header">
+                        <h2>Почасова прогноза</h2>
+                        <p>Следващите 24 часа</p>
                     </div>
-                    <div class="condition" id="condition-box">
-                        <span id="condition-icon"></span>
-                        <div class="condition-text">
-                            <p class="condition-label" id="condition">Състояние</p>
+                    <div class="hourly-scroll-container" id="hourly-container"></div>
+                </section>
+
+                <section class="forecast-panel" aria-label="Петдневна прогноза">
+                    <div class="panel-header">
+                        <h2>Прогноза за 5 дни</h2>
+                        <p>Тенденция по дни</p>
+                    </div>
+                    <div class="daily-list-container" id="daily-container"></div>
+                </section>
+
+                <section class="details-panel" aria-label="Допълнителни детайли">
+                    <div class="details-header">
+                        <h2>Акценти днес</h2>
+                        <p>Данни на живо</p>
+                    </div>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <p class="detail-label">Изгрев</p>
+                            <p class="detail-value" id="sunrise">--:--</p>
+                        </div>
+                        <div class="detail-item">
+                            <p class="detail-label">Залез</p>
+                            <p class="detail-value" id="sunset">--:--</p>
+                        </div>
+                        <div class="detail-item">
+                            <p class="detail-label">Влажност</p>
+                            <p class="detail-value" id="humidity">-- %</p>
+                        </div>
+                        <div class="detail-item">
+                            <p class="detail-label">Налягане</p>
+                            <p class="detail-value" id="pressure">-- хПа</p>
                         </div>
                     </div>
-                    <p id="error-message" class="error-text"></p>
-                </article>
-
-                <article class="weather-card stat-card">
-                    <p class="stat-label">Вятър</p>
-                    <p class="stat-value" id="wind">-- км/ч</p>
-                    <p class="stat-helper">Скорост</p>
-                </article>
-
-                <article class="weather-card stat-card">
-                    <p class="stat-label">Усеща се</p>
-                    <p class="stat-value" id="feels-like">-- °C</p>
-                    <p class="stat-helper">Индекс на комфорт</p>
-                </article>
-
-                <article class="weather-card stat-card">
-                    <p class="stat-label">Валежи</p>
-                    <p class="stat-value" id="precipitation">-- мм</p>
-                    <p class="stat-helper">Количество</p>
-                </article>
-            </section>
-
-            <section class="forecast-panel" aria-label="Почасова прогноза">
-                <div class="panel-header">
-                    <h2>Почасова прогноза</h2>
-                    <p>Следващите 24 часа</p>
-                </div>
-                <div class="hourly-scroll-container" id="hourly-container"></div>
-            </section>
-
-            <section class="forecast-panel" aria-label="Петдневна прогноза">
-                <div class="panel-header">
-                    <h2>Прогноза за 5 дни</h2>
-                    <p>Тенденция по дни</p>
-                </div>
-                <div class="daily-list-container" id="daily-container"></div>
-            </section>
-
-            <section class="details-panel" aria-label="Допълнителни детайли">
-                <div class="details-header">
-                    <h2>Акценти днес</h2>
-                    <p>Данни на живо</p>
-                </div>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <p class="detail-label">Изгрев</p>
-                        <p class="detail-value" id="sunrise">--:--</p>
-                    </div>
-                    <div class="detail-item">
-                        <p class="detail-label">Залез</p>
-                        <p class="detail-value" id="sunset">--:--</p>
-                    </div>
-                    <div class="detail-item">
-                        <p class="detail-label">Влажност</p>
-                        <p class="detail-value" id="humidity">-- %</p>
-                    </div>
-                    <div class="detail-item">
-                        <p class="detail-label">Налягане</p>
-                        <p class="detail-value" id="pressure">-- хПа</p>
-                    </div>
-                </div>
-            </section>
+                </section>
+            </div>
             
         </main>
     </div>

@@ -24,39 +24,77 @@ const DOM = {
     sunset: document.getElementById('sunset'),
     humidity: document.getElementById('humidity'),
     pressure: document.getElementById('pressure'),
-    time: document.getElementById('local-time')
+    time: document.getElementById('local-time'),
+    loader: document.getElementById('app-loader'),
+    mainContent: document.getElementById('main-content')
 };
 
-// --- 2. GLOBAL STATES ---
+// --- 2. GLOBAL STATES & CACHE CONFIG ---
 let currentUnit = 'C'; 
 let searchHistory = JSON.parse(localStorage.getItem('weatherHistory')) || [];
-let weatherCache = null;
 let lightningInterval = null;
+let errorTimeout = null;
+
+// Истински in-memory кеш обект и TTL конфигурация (10 минути в милисекунди)
+const weatherCache = {}; 
+const CACHE_TTL = 10 * 60 * 1000; 
+
+// Текущо активно състояние на времето за визуализация
+let activeWeatherData = null;
+
+// Функции за управление на състоянието на зареждане
+function showLoader() {
+    DOM.loader.classList.remove('hidden');
+    DOM.mainContent.classList.add('hidden');
+}
+
+function hideLoader() {
+    DOM.loader.classList.add('hidden');
+    DOM.mainContent.classList.remove('hidden');
+}
+
+function showValidationError(message) {
+    DOM.error.textContent = message;
+    DOM.error.classList.add('visible');
+    
+    if (errorTimeout) clearTimeout(errorTimeout);
+    
+    errorTimeout = setTimeout(() => {
+        DOM.error.classList.remove('visible');
+    }, 4000);
+}
 
 // --- 3. MAIN WEATHER FUNCTIONS ---
 async function getWeather(city) {
     try {
+        const normalizedCity = city.trim().toLowerCase();
         DOM.searchInput.value = '';
-        DOM.error.style.display = 'none';
-        DOM.cityRegion.style.display = 'block';
-        DOM.tempBox.style.display = 'flex';
-        DOM.conditionBox.style.display = 'flex';
+        DOM.error.classList.remove('visible');
 
         let displayCity = city;
         if (city.length > 9) { displayCity = city.substring(0, 9) + '...'; }
+
+        // --- ЛОГИКА ЗА КЕША (ОТ СНИМКАТА) ---
+        if (weatherCache[normalizedCity]) {
+            const age = Date.now() - weatherCache[normalizedCity].timestamp;
+            if (age < CACHE_TTL) {
+                console.log(`Зареждане от КЕШ без API заявка за град: ${city}`);
+                activeWeatherData = weatherCache[normalizedCity].data;
+                updateUI();
+                return; // Спираме функцията тук, защото имаме готови пресни данни!
+            }
+        }
+
+        // Ако няма нищо в кеша или е изтекъл, правим нормален fetch:
+        showLoader();
 
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=bg&format=json`;
         const geoResponse = await fetch(geoUrl);
         const geoData = await geoResponse.json();
 
         if (!geoData.results || geoData.results.length === 0) {
-            clearUI();
-            DOM.cityName.textContent = "Грешка";
-            DOM.cityRegion.style.display = 'none';
-            DOM.tempBox.style.display = 'none';
-            DOM.conditionBox.style.display = 'none';
-            DOM.error.textContent = `Градът "${displayCity}" не бе намерен! Опитайте отново.`;
-            DOM.error.style.display = 'block';
+            hideLoader();
+            showValidationError(`Градът "${displayCity}" не бе намерен! Опитайте отново.`);
             return;
         }
 
@@ -66,27 +104,42 @@ async function getWeather(city) {
         const weatherData = await weatherResponse.json();
         
         addToHistory(location.name);
-        weatherCache = { cityName: location.name, cityRegion: location.country || "", data: weatherData };
+
+        // Записваме данните в обекта activeWeatherData
+        activeWeatherData = { cityName: location.name, cityRegion: location.country || "", data: weatherData };
+
+        // --- ЗАПАЗВАНЕ В КЕША С TIMESTAMP ---
+        weatherCache[normalizedCity] = {
+            data: activeWeatherData,
+            timestamp: Date.now()
+        };
+
         updateUI();
 
     } catch (error) {
         console.error(error);
-        clearUI();
-        DOM.cityName.textContent = "Грешка";
-        DOM.cityRegion.style.display = 'none';
-        DOM.tempBox.style.display = 'none';
-        DOM.conditionBox.style.display = 'none';
-        DOM.error.textContent = "Възникна техническа грешка с връзката!";
-        DOM.error.style.display = 'block';
+        hideLoader();
+        showValidationError("Възникна техническа грешка с връзката!");
     }
 }
 
 async function getWeatherByCoordinates(lat, lon) {
     try {
-        DOM.error.style.display = 'none';
-        DOM.cityRegion.style.display = 'block';
-        DOM.tempBox.style.display = 'flex';
-        DOM.conditionBox.style.display = 'flex';
+        const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+        DOM.error.classList.remove('visible');
+
+        // Проверка на кеша и за GPS координатите
+        if (weatherCache[cacheKey]) {
+            const age = Date.now() - weatherCache[cacheKey].timestamp;
+            if (age < CACHE_TTL) {
+                console.log("Зареждане на текущата локация от КЕШ.");
+                activeWeatherData = weatherCache[cacheKey].data;
+                updateUI();
+                return;
+            }
+        }
+
+        showLoader();
 
         let resolvedCityName = "Моята локация";
         try {
@@ -102,7 +155,14 @@ async function getWeatherByCoordinates(lat, lon) {
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
 
-        weatherCache = { cityName: resolvedCityName, cityRegion: "Текущо местоположение", data: weatherData };
+        activeWeatherData = { cityName: resolvedCityName, cityRegion: "Текущо местоположение", data: weatherData };
+
+        // Записваме в кеша координатите
+        weatherCache[cacheKey] = {
+            data: activeWeatherData,
+            timestamp: Date.now()
+        };
+
         updateUI();
 
     } catch (error) {
@@ -113,13 +173,13 @@ async function getWeatherByCoordinates(lat, lon) {
 
 // --- 4. UI RENDERING FUNCTIONS ---
 function updateUI() {
-    if (!weatherCache) return;
+    if (!activeWeatherData) return;
 
-    const weatherData = weatherCache.data;
+    const weatherData = activeWeatherData.data;
     const code = weatherData.current.weather_code;
 
-    DOM.cityName.textContent = weatherCache.cityName;
-    DOM.cityRegion.textContent = weatherCache.cityRegion; 
+    DOM.cityName.textContent = activeWeatherData.cityName;
+    DOM.cityRegion.textContent = activeWeatherData.cityRegion; 
 
     DOM.conditionIcon.textContent = getWeatherEmoji(code);
     DOM.condition.textContent = getWeatherText(code);
@@ -136,10 +196,12 @@ function updateUI() {
     renderTemperaturesOnly();
     renderHourlyForecast(weatherData.hourly);
     renderDailyForecast(weatherData.daily);
+
+    hideLoader();
 }
 
 function updateAmbientTheme(code) {
-    document.body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-stormy');
+    document.body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-stormy', 'weather-default');
     clearInterval(lightningInterval);
 
     if (code === 0 || code === 1) {
@@ -161,8 +223,8 @@ function updateAmbientTheme(code) {
 }
 
 function renderTemperaturesOnly() {
-    if (!weatherCache) return;
-    const current = weatherCache.data.current;
+    if (!activeWeatherData) return;
+    const current = activeWeatherData.data.current;
 
     let temp = Math.round(current.temperature_2m);
     let feelsLike = Math.round(current.apparent_temperature);
@@ -248,6 +310,7 @@ function clearUI() {
     DOM.hourlyContainer.innerHTML = '';
     DOM.dailyContainer.innerHTML = '';
     document.body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-stormy');
+    document.body.classList.add('weather-default');
     clearInterval(lightningInterval);
 }
 
@@ -265,9 +328,7 @@ function renderHistory() {
     searchHistory.forEach(city => {
         const badge = document.createElement('button');
         badge.textContent = city;
-        badge.className = 'theme-toggle-btn';
-        badge.style.padding = '6px 14px'; 
-        badge.style.fontSize = '12px';
+        badge.className = 'theme-toggle-btn history-badge';
         badge.addEventListener('click', () => getWeather(city));
         DOM.historyContainer.appendChild(badge);
     });
@@ -312,19 +373,16 @@ function formatTime(timeString) {
 function handleSearch() {
     const city = DOM.searchInput.value.trim();
     if (city === "") {
-        clearUI();
-        DOM.cityName.textContent = "Грешка";
-        DOM.cityRegion.style.display = 'none';
-        DOM.tempBox.style.display = 'none';
-        DOM.conditionBox.style.display = 'none';
-        DOM.error.textContent = "Невалиден вход! Моля, въведете град.";
-        DOM.error.style.display = 'block';
+        showValidationError("Невалиден вход! Моля, въведете град.");
     } else {
         getWeather(city);
     }
 }
 
-// --- 7. EVENT LISTENERS ---
+DOM.searchInput.addEventListener('input', () => {
+    DOM.error.classList.remove('visible');
+});
+
 DOM.searchButton.addEventListener('click', handleSearch);
 DOM.searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
 
@@ -343,7 +401,7 @@ DOM.geoButton.addEventListener('click', function() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => getWeatherByCoordinates(pos.coords.latitude, pos.coords.longitude),
-            () => { DOM.error.textContent = "Достъпът до локация е забранен!"; DOM.error.style.display = 'block'; }
+            () => { showValidationError("Достъпът до локация е забранен!"); }
         );
     }
 });
