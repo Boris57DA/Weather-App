@@ -1,11 +1,11 @@
-<img width="1227" height="1048" alt="image" src="https://github.com/user-attachments/assets/8ad0d255-9cf0-4da5-8af8-552e4f28b3f7" /># 🌤️ Приложение за времето — Модерен и интуитивен интерфейс
+/># 🌤️ Приложение за времето — Модерен и интуитивен интерфейс
 
 **Приложение за времето** е модерно, бързо и напълно адаптивно уеб приложение за следене на метеорологичните условия в реално време. Проектът съчетава изчистен и модерен дизайн в стил **Glassmorphic** с оптимизирано софтуерно представяне чрез умно кеширане на данни и интелигентно управление на състоянията (Loading, Error, Success).
 
 ---
 
 ## 📸 Интерфейс
-<img width="1227" height="1048" alt="image" src="https://github.com/user-attachments/assets/5225b95c-c061-44e0-9df1-8e9d3bf6811f" />
+<img width="1000" height="900" alt="image" src="https://github.com/user-attachments/assets/5225b95c-c061-44e0-9df1-8e9d3bf6811f" />
 
 ---
 
