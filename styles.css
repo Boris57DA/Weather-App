@@ -125,6 +125,25 @@ body {
     color: var(--ink);
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
+
+/* NEW: Clean minimalist layout configuration for the location tracking icon */
+.geo-button {
+    background-color: var(--card-alt);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 0 16px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.geo-button:hover {
+    background-color: var(--btn-hover);
+    border-color: var(--ink);
+}
+
 .search-button {
     background-color: var(--accent);
     color: white;
@@ -159,14 +178,13 @@ body {
     justify-content: space-between;
     align-items: center;
     background: var(--card-alt);
-    position: relative; /* REQUIRED: Anchor frame for the absolute position button below */
+    position: relative;
 }
 .city-name { font-size: 24px; font-weight: 600; }
 .city-region { color: var(--muted); font-size: 14px; transition: color 0.3s ease; }
 .temperature { font-size: 64px; font-weight: 600; display: flex; }
 .temp-unit { font-size: 24px; color: var(--muted); margin-top: 8px; transition: color 0.3s ease; }
 
-/* Custom absolute styling to place the metric button in the top right corner */
 .unit-toggle-btn {
     position: absolute;
     top: 24px;
@@ -270,7 +288,6 @@ body {
         text-align: center;
     }
 
-    /* Reset absolute position on phone to fit nicely into the center column stack */
     .unit-toggle-btn {
         position: static;
         margin-top: 4px;
@@ -303,6 +320,12 @@ body {
     .search-panel {
         flex-direction: column;
         gap: 8px;
+    }
+
+    /* Stack geolocation shortcut symmetrically within the mobile display panel list */
+    .geo-button {
+        width: 100%;
+        padding: 14px;
     }
 
     .search-button {

@@ -5,6 +5,7 @@ const DOM = {
     themeButton: document.getElementById('theme-btn'),
     unitButton: document.getElementById('unit-toggle-btn'),
     historyContainer: document.getElementById('history-container'),
+    geoButton: document.getElementById('geo-btn'), // NEW: Location request trigger selector
     cityName: document.getElementById('city-name'),
     cityRegion: document.getElementById('city-region'),
     error: document.getElementById('error-message'),
@@ -72,13 +73,13 @@ async function getWeather(city) {
         
         addToHistory(location.name);
 
-        // Update the cached values before putting them on screen
-        cachedTemp = Math.round(weather.current.temperature_2m);
-        cachedFeelsLike = Math.round(weather.current.apparent_temperature);
+        cachedTemp = Math.round(weatherData.current.temperature_2m);
+        cachedFeelsLike = Math.round(weatherData.current.apparent_temperature);
 
         updateUI(location.name, location.country || "", weatherData);
 
     } catch (error) {
+        console.error(error); 
         clearUI();
         DOM.cityName.textContent = "Грешка";
         DOM.cityRegion.style.display = 'none';
@@ -98,60 +99,52 @@ async function getWeatherByCoordinates(lat, lon) {
         DOM.conditionBox.style.display = 'flex';
 
         let resolvedCityName = "Моята локация";
+        
         try {
             const reverseGeoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=bg`;
             const reverseGeoResponse = await fetch(reverseGeoUrl);
             const reverseGeoData = await reverseGeoResponse.json();
             resolvedCityName = reverseGeoData.city || reverseGeoData.locality || reverseGeoData.principalSubdivision || "Моята локация";
         } catch (e) {
-            console.log("Reverse geocoding failed, using fallback label.");
+            console.log("Reverse geocoding network blocked.");
         }
 
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
 
-        // Update the cached values with local coordinates data
-        cachedTemp = Math.round(weather.current.temperature_2m);
-        cachedFeelsLike = Math.round(weather.current.apparent_temperature);
+        cachedTemp = Math.round(weatherData.current.temperature_2m);
+        cachedFeelsLike = Math.round(weatherData.current.apparent_temperature);
 
         updateUI(resolvedCityName, "Текущо местоположение", weatherData);
 
     } catch (error) {
-        clearUI();
-        DOM.cityName.textContent = "Грешка";
-        DOM.cityRegion.style.display = 'none';
-        DOM.tempBox.style.display = 'none';
-        DOM.conditionBox.style.display = 'none';
-        DOM.error.textContent = "Неуспешно зареждане на локалното време!";
-        DOM.error.style.display = 'block';
+        console.error(error);
+        getWeather('София');
     }
 }
 
 // --- 4. UI RENDERING FUNCTIONS ---
-// Modified to take explicit strings for city and region layout properties
-function updateUI(cityName, cityRegion, weather) {
-    const code = weather.current.weather_code;
+function updateUI(cityName, cityRegion, weatherData) {
+    const code = weatherData.current.weather_code;
 
     DOM.cityName.textContent = cityName;
     DOM.cityRegion.textContent = cityRegion; 
     
-    // Call our modular calculation script to display degrees correctly
     renderTemperaturesOnly();
 
     DOM.conditionIcon.textContent = getWeatherEmoji(code);
     DOM.condition.textContent = getWeatherText(code);
-    DOM.wind.textContent = weather.current.wind_speed_10m + " км/ч";
-    DOM.precipitation.textContent = weather.current.precipitation + " мм";
-    DOM.humidity.textContent = weather.current.relative_humidity_2m + " %";
-    DOM.pressure.textContent = Math.round(weather.current.surface_pressure) + " хПа";
+    DOM.wind.textContent = weatherData.current.wind_speed_10m + " км/ч";
+    DOM.precipitation.textContent = weatherData.current.precipitation + " мм";
+    DOM.humidity.textContent = weatherData.current.relative_humidity_2m + " %";
+    DOM.pressure.textContent = Math.round(weatherData.current.surface_pressure) + " хПа";
 
-    DOM.sunrise.textContent = formatTime(weather.daily.sunrise[0]);
-    DOM.sunset.textContent = formatTime(weather.daily.sunset[0]);
-    DOM.time.textContent = formatTime(weather.current.time);
+    DOM.sunrise.textContent = formatTime(weatherData.daily.sunrise[0]);
+    DOM.sunset.textContent = formatTime(weatherData.daily.sunset[0]);
+    DOM.time.textContent = formatTime(weatherData.current.time);
 }
 
-// Dedicated helper function to recalculate and display values instantly without API refetches
 function renderTemperaturesOnly() {
     if (cachedTemp === null || cachedFeelsLike === null) return;
 
@@ -288,7 +281,6 @@ DOM.themeButton.addEventListener('click', function() {
     }
 });
 
-// FIXED: Switching units now calculates values locally in real-time without rewriting texts or labels!
 DOM.unitButton.addEventListener('click', function() {
     if (currentUnit === 'C') {
         currentUnit = 'F';
@@ -297,9 +289,27 @@ DOM.unitButton.addEventListener('click', function() {
         currentUnit = 'C';
         DOM.unitButton.textContent = "Промени на °F";
     }
-    
-    // Instant smooth calculation update on the interface screen
     renderTemperaturesOnly();
+});
+
+// NEW: Clicking location badge forces immediate on-demand GPS coordinates query execution
+DOM.geoButton.addEventListener('click', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                getWeatherByCoordinates(lat, lon);
+            },
+            () => {
+                DOM.error.textContent = "Достъпът до локация е забранен от браузъра!";
+                DOM.error.style.display = 'block';
+            }
+        );
+    } else {
+        DOM.error.textContent = "Браузърът ви не поддържа геолокация!";
+        DOM.error.style.display = 'block';
+    }
 });
 
 // --- 8. SYSTEM INITIALIZATION ---
@@ -311,7 +321,7 @@ if (navigator.geolocation) {
             getWeatherByCoordinates(lat, lon);
         },
         () => {
-            console.log("Geolocation blocked or failed. Falling back to Sofia.");
+            console.log("Geolocation blocked/failed. Using Sofia.");
             getWeather('София');
         }
     );
