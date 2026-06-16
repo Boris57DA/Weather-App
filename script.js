@@ -1,11 +1,13 @@
-// --- 1. DOM ELEMENTS SELECTION (ORGANIZED IN A SINGLE OBJECT) ---
+// --- 1. DOM ELEMENTS SELECTION ---
 const DOM = {
     searchInput: document.getElementById('city-input'),
     searchButton: document.getElementById('search-btn'),
     themeButton: document.getElementById('theme-btn'),
     unitButton: document.getElementById('unit-toggle-btn'),
     historyContainer: document.getElementById('history-container'),
-    geoButton: document.getElementById('geo-btn'), // NEW: Location request trigger selector
+    geoButton: document.getElementById('geo-btn'),
+    hourlyContainer: document.getElementById('hourly-container'), // NEW
+    dailyContainer: document.getElementById('daily-container'),   // NEW
     cityName: document.getElementById('city-name'),
     cityRegion: document.getElementById('city-region'),
     error: document.getElementById('error-message'),
@@ -28,24 +30,20 @@ const DOM = {
 let currentUnit = 'C'; 
 let searchHistory = JSON.parse(localStorage.getItem('weatherHistory')) || [];
 
-// Cache variables to hold the raw Celsius values from the last successful fetch
-let cachedTemp = null;
-let cachedFeelsLike = null;
+// Master memory tracking object storage cache to trigger conversions cleanly
+let weatherCache = null;
 
 // --- 3. MAIN WEATHER FUNCTIONS ---
 async function getWeather(city) {
     try {
         DOM.searchInput.value = '';
-
         DOM.error.style.display = 'none';
         DOM.cityRegion.style.display = 'block';
         DOM.tempBox.style.display = 'flex';
         DOM.conditionBox.style.display = 'flex';
 
         let displayCity = city;
-        if (city.length > 9) {
-            displayCity = city.substring(0, 9) + '...';
-        }
+        if (city.length > 9) { displayCity = city.substring(0, 9) + '...'; }
 
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=bg&format=json`;
         const geoResponse = await fetch(geoUrl);
@@ -57,35 +55,35 @@ async function getWeather(city) {
             DOM.cityRegion.style.display = 'none';
             DOM.tempBox.style.display = 'none';
             DOM.conditionBox.style.display = 'none';
-
             DOM.error.textContent = `Градът "${displayCity}" не бе намерен! Опитайте отново.`;
             DOM.error.style.display = 'block';
             return;
         }
 
         const location = geoData.results[0];
-        const lat = location.latitude;
-        const lon = location.longitude;
-
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=sunrise,sunset&timezone=auto`;
+        
+        // REFACTORED URL: Appended deep extraction params for hourly metrics and 5-day daily forecasts logs
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
         
         addToHistory(location.name);
 
-        cachedTemp = Math.round(weatherData.current.temperature_2m);
-        cachedFeelsLike = Math.round(weatherData.current.apparent_temperature);
+        weatherCache = {
+            cityName: location.name,
+            cityRegion: location.country || "",
+            data: weatherData
+        };
 
-        updateUI(location.name, location.country || "", weatherData);
+        updateUI();
 
     } catch (error) {
-        console.error(error); 
+        console.error(error);
         clearUI();
         DOM.cityName.textContent = "Грешка";
         DOM.cityRegion.style.display = 'none';
         DOM.tempBox.style.display = 'none';
         DOM.conditionBox.style.display = 'none';
-        
         DOM.error.textContent = "Възникна техническа грешка с връзката!";
         DOM.error.style.display = 'block';
     }
@@ -99,7 +97,6 @@ async function getWeatherByCoordinates(lat, lon) {
         DOM.conditionBox.style.display = 'flex';
 
         let resolvedCityName = "Моята локация";
-        
         try {
             const reverseGeoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=bg`;
             const reverseGeoResponse = await fetch(reverseGeoUrl);
@@ -109,14 +106,17 @@ async function getWeatherByCoordinates(lat, lon) {
             console.log("Reverse geocoding network blocked.");
         }
 
-        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&daily=sunrise,sunset&timezone=auto`;
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,surface_pressure,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
 
-        cachedTemp = Math.round(weatherData.current.temperature_2m);
-        cachedFeelsLike = Math.round(weatherData.current.apparent_temperature);
+        weatherCache = {
+            cityName: resolvedCityName,
+            cityRegion: "Текущо местоположение",
+            data: weatherData
+        };
 
-        updateUI(resolvedCityName, "Текущо местоположение", weatherData);
+        updateUI();
 
     } catch (error) {
         console.error(error);
@@ -125,13 +125,14 @@ async function getWeatherByCoordinates(lat, lon) {
 }
 
 // --- 4. UI RENDERING FUNCTIONS ---
-function updateUI(cityName, cityRegion, weatherData) {
+function updateUI() {
+    if (!weatherCache) return;
+
+    const weatherData = weatherCache.data;
     const code = weatherData.current.weather_code;
 
-    DOM.cityName.textContent = cityName;
-    DOM.cityRegion.textContent = cityRegion; 
-    
-    renderTemperaturesOnly();
+    DOM.cityName.textContent = weatherCache.cityName;
+    DOM.cityRegion.textContent = weatherCache.cityRegion; 
 
     DOM.conditionIcon.textContent = getWeatherEmoji(code);
     DOM.condition.textContent = getWeatherText(code);
@@ -143,22 +144,91 @@ function updateUI(cityName, cityRegion, weatherData) {
     DOM.sunrise.textContent = formatTime(weatherData.daily.sunrise[0]);
     DOM.sunset.textContent = formatTime(weatherData.daily.sunset[0]);
     DOM.time.textContent = formatTime(weatherData.current.time);
+
+    // Call modular rendering macros synchronously
+    renderTemperaturesOnly();
+    renderHourlyForecast(weatherData.hourly);
+    renderDailyForecast(weatherData.daily);
 }
 
 function renderTemperaturesOnly() {
-    if (cachedTemp === null || cachedFeelsLike === null) return;
+    if (!weatherCache) return;
+    const current = weatherCache.data.current;
 
-    let tempToDisplay = cachedTemp;
-    let feelsToDisplay = cachedFeelsLike;
+    let temp = Math.round(current.temperature_2m);
+    let feelsLike = Math.round(current.apparent_temperature);
 
     if (currentUnit === 'F') {
-        tempToDisplay = Math.round(cachedTemp * 1.8 + 32);
-        feelsToDisplay = Math.round(cachedFeelsLike * 1.8 + 32);
+        temp = Math.round(temp * 1.8 + 32);
+        feelsLike = Math.round(feelsLike * 1.8 + 32);
     }
 
-    DOM.temperature.textContent = tempToDisplay;
+    DOM.temperature.textContent = temp;
     document.querySelector('.temp-unit').textContent = ` °${currentUnit}`;
-    DOM.feelsLike.textContent = `${feelsToDisplay} °${currentUnit}`;
+    DOM.feelsLike.textContent = `${feelsLike} °${currentUnit}`;
+}
+
+// NEW: Generates 24 horizontal hourly forecast card badges dynamically
+function renderHourlyForecast(hourlyData) {
+    DOM.hourlyContainer.innerHTML = '';
+    
+    // Parse out current localized hour slot index
+    const currentHourIndex = new Date().getHours();
+    
+    // Slice data loops for the next 24 chronological hours sequence
+    for (let i = currentHourIndex; i < currentHourIndex + 24; i++) {
+        if (!hourlyData.time[i]) break;
+
+        const timeLabel = formatTime(hourlyData.time[i]);
+        let rawTemp = Math.round(hourlyData.temperature_2m[i]);
+        const statusCode = hourlyData.weather_code[i];
+
+        if (currentUnit === 'F') { rawTemp = Math.round(rawTemp * 1.8 + 32); }
+
+        const card = document.createElement('div');
+        card.className = 'hourly-card';
+        card.innerHTML = `
+            <p class="hourly-time">${timeLabel}</p>
+            <span class="hourly-icon">${getWeatherEmoji(statusCode)}</span>
+            <p class="hourly-temp">${rawTemp}°</p>
+        `;
+        DOM.hourlyContainer.appendChild(card);
+    }
+}
+
+// NEW: Generates rows mapping out the upcoming 5-day layout trends sequentially
+function renderDailyForecast(dailyData) {
+    DOM.dailyContainer.innerHTML = '';
+
+    // Loop through indexes 1 to 5 to fetch the subsequent days ahead cleanly (skipping index 0 which is today)
+    for (let i = 1; i <= 5; i++) {
+        if (!dailyData.time[i]) break;
+
+        const rawDate = new Date(dailyData.time[i]);
+        const dayLabel = rawDate.toLocaleDateString('bg-BG', { weekday: 'long' });
+        const capitalizedDay = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+
+        let maxTemp = Math.round(dailyData.temperature_2m_max[i]);
+        let minTemp = Math.round(dailyData.temperature_2m_min[i]);
+        const statusCode = dailyData.weather_code[i];
+
+        if (currentUnit === 'F') {
+            maxTemp = Math.round(maxTemp * 1.8 + 32);
+            minTemp = Math.round(minTemp * 1.8 + 32);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'daily-row';
+        row.innerHTML = `
+            <p class="daily-date">${capitalizedDay}</p>
+            <div class="daily-condition-box">
+                <span class="daily-row-icon">${getWeatherEmoji(statusCode)}</span>
+                <span class="daily-row-text">${getWeatherText(statusCode)}</span>
+            </div>
+            <p class="daily-temp-range">${maxTemp}° / ${minTemp}°</p>
+        `;
+        DOM.dailyContainer.appendChild(row);
+    }
 }
 
 function clearUI() {
@@ -172,6 +242,8 @@ function clearUI() {
     DOM.humidity.textContent = "-- %";
     DOM.pressure.textContent = "-- хПа";
     DOM.time.textContent = "--:--";
+    DOM.hourlyContainer.innerHTML = '';
+    DOM.dailyContainer.innerHTML = '';
 }
 
 // --- 5. LOCALSTORAGE HISTORY LOGIC ---
@@ -189,22 +261,13 @@ function renderHistory() {
         const badge = document.createElement('button');
         badge.textContent = city;
         badge.style.cssText = `
-            background-color: var(--card-alt);
-            color: var(--ink);
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            background-color: var(--card-alt); color: var(--ink); border: 1px solid var(--border);
+            padding: 6px 12px; border-radius: 12px; cursor: pointer; font-family: inherit;
+            font-size: 12px; font-weight: 500; transition: all 0.2s ease;
         `;
         badge.addEventListener('mouseover', () => badge.style.borderColor = 'var(--ink)');
         badge.addEventListener('mouseout', () => badge.style.borderColor = 'var(--border)');
-        badge.addEventListener('click', () => {
-            getWeather(city);
-        });
+        badge.addEventListener('click', () => getWeather(city));
         DOM.historyContainer.appendChild(badge);
     });
 }
@@ -223,13 +286,14 @@ function getWeatherEmoji(code) {
     return "❓";
 }
 
+// Clean status summaries mapper
 function getWeatherText(code) {
     if (code === 0) return "Ясно небе";
-    if (code === 1) return "Преобладаващо ясно";
-    if (code === 2) return "Променлива облачност";
-    if (code === 3) return "Значителна облачност";
+    if (code === 1) return "Предимно ясно";
+    if (code === 2) return "Частична облачност";
+    if (code === 3) return "Облачно";
     if (code === 45 || code === 48) return "Мъгла";
-    if (code >= 51 && code <= 55) return "Слаб дъжд / Ръмеж";
+    if (code >= 51 && code <= 55) return "Ръмеж";
     if (code >= 61 && code <= 65) return "Дъжд";
     if (code >= 71 && code <= 75) return "Сняг";
     if (code >= 95) return "Гръмотевична буря";
@@ -253,7 +317,6 @@ function handleSearch() {
         DOM.cityRegion.style.display = 'none';
         DOM.tempBox.style.display = 'none';
         DOM.conditionBox.style.display = 'none';
-        
         DOM.error.textContent = "Невалиден вход! Моля, въведете град.";
         DOM.error.style.display = 'block';
     } else {
@@ -262,23 +325,12 @@ function handleSearch() {
 }
 
 // --- 7. EVENT LISTENERS ---
-DOM.searchButton.addEventListener('click', function() {
-    handleSearch();
-});
-
-DOM.searchInput.addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        handleSearch();
-    }
-});
+DOM.searchButton.addEventListener('click', handleSearch);
+DOM.searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
 
 DOM.themeButton.addEventListener('click', function() {
     document.body.classList.toggle('dark-mode');
-    if (document.body.classList.contains('dark-mode')) {
-        DOM.themeButton.textContent = "☀️ Светъл режим";
-    } else {
-        DOM.themeButton.textContent = "🌙 Тъмен режим";
-    }
+    DOM.themeButton.textContent = document.body.classList.contains('dark-mode') ? "☀️ Светъл режим" : "🌙 Тъмен режим";
 });
 
 DOM.unitButton.addEventListener('click', function() {
@@ -289,41 +341,23 @@ DOM.unitButton.addEventListener('click', function() {
         currentUnit = 'C';
         DOM.unitButton.textContent = "Промени на °F";
     }
-    renderTemperaturesOnly();
+    updateUI(); // Refreshes everything natively from master object memory scopes
 });
 
-// NEW: Clicking location badge forces immediate on-demand GPS coordinates query execution
 DOM.geoButton.addEventListener('click', function() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                getWeatherByCoordinates(lat, lon);
-            },
-            () => {
-                DOM.error.textContent = "Достъпът до локация е забранен от браузъра!";
-                DOM.error.style.display = 'block';
-            }
+            (pos) => getWeatherByCoordinates(pos.coords.latitude, pos.coords.longitude),
+            () => { DOM.error.textContent = "Достъпът до локация е забранен!"; DOM.error.style.display = 'block'; }
         );
-    } else {
-        DOM.error.textContent = "Браузърът ви не поддържа геолокация!";
-        DOM.error.style.display = 'block';
     }
 });
 
 // --- 8. SYSTEM INITIALIZATION ---
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            getWeatherByCoordinates(lat, lon);
-        },
-        () => {
-            console.log("Geolocation blocked/failed. Using Sofia.");
-            getWeather('София');
-        }
+        (pos) => getWeatherByCoordinates(pos.coords.latitude, pos.coords.longitude),
+        () => { console.log("Geolocation failed. Using Sofia."); getWeather('София'); }
     );
 } else {
     getWeather('София');

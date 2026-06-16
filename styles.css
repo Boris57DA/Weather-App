@@ -126,7 +126,6 @@ body {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* NEW: Clean minimalist layout configuration for the location tracking icon */
 .geo-button {
     background-color: var(--card-alt);
     color: var(--ink);
@@ -234,6 +233,71 @@ body {
 .stat-value { font-size: 24px; font-weight: 600; margin: 8px 0; }
 .stat-helper { font-size: 12px; color: var(--muted); transition: color 0.3s ease; }
 
+/* --- NEW: FORECAST PANELS --- */
+.forecast-panel {
+    background: var(--card-alt);
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: background-color 0.3s ease;
+}
+.panel-header h2 { font-size: 20px; }
+.panel-header p { font-size: 14px; color: var(--muted); }
+
+/* Hourly Horizontal Scroll Scrollbar custom styles */
+.hourly-scroll-container {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+.hourly-scroll-container::-webkit-scrollbar {
+    height: 6px;
+}
+.hourly-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.hourly-card {
+    background: var(--card);
+    min-width: 90px;
+    padding: 16px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+.hourly-time { font-size: 13px; font-weight: 500; color: var(--muted); }
+.hourly-icon { font-size: 24px; }
+.hourly-temp { font-size: 16px; font-weight: 600; }
+
+/* 5-Day Forecast List Rows */
+.daily-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.daily-row {
+    background: var(--card);
+    padding: 14px 20px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.daily-date { width: 120px; font-weight: 500; }
+.daily-condition-box { display: flex; align-items: center; gap: 8px; width: 180px; }
+.daily-row-icon { font-size: 24px; }
+.daily-row-text { font-size: 14px; color: var(--muted); }
+.daily-temp-range { font-weight: 600; text-align: right; }
+
 /* --- DETAILS PANEL --- */
 .details-panel {
     background: var(--card-alt);
@@ -259,77 +323,23 @@ body {
 .detail-label { font-size: 12px; color: var(--muted); text-transform: uppercase; transition: color 0.3s ease; }
 .detail-value { font-size: 18px; font-weight: 600; margin-top: 8px; }
 
-/* --- RESPONSIVE DESIGN (FULLY OPTIMIZED FOR MOBILE PHONE) --- */
+/* --- RESPONSIVE DESIGN --- */
 @media (max-width: 768px) {
-    .app {
-        padding: 16px;
-        gap: 20px;
-    }
-
-    .app-header {
-        align-items: flex-start;
-    }
-
-    .weather-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .main-card {
-        grid-column: span 2; 
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 16px;
-        padding: 20px 16px; 
-    }
-
-    .card-header {
-        text-align: center;
-    }
-
-    .unit-toggle-btn {
-        position: static;
-        margin-top: 4px;
-    }
-
-    .temperature {
-        justify-content: center;
-        margin-right: 0;
-        font-size: 56px; 
-    }
-
-    .stat-card {
-        padding: 16px;
-        min-height: 100px;
-    }
-
-    .stat-value {
-        font-size: 20px; 
-    }
-
-    .details-panel {
-        padding: 16px;
-    }
-
-    .details-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .search-panel {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    /* Stack geolocation shortcut symmetrically within the mobile display panel list */
-    .geo-button {
-        width: 100%;
-        padding: 14px;
-    }
-
-    .search-button {
-        width: 100%;
-        padding: 14px;
-    }
+    .app { padding: 16px; gap: 20px; }
+    .app-header { align-items: flex-start; }
+    .weather-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .main-card { grid-column: span 2; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 20px 16px; }
+    .card-header { text-align: center; }
+    .unit-toggle-btn { position: static; margin-top: 4px; }
+    .temperature { justify-content: center; margin-right: 0; font-size: 56px; }
+    .stat-card { padding: 16px; min-height: 100px; }
+    .stat-value { font-size: 20px; }
+    .details-panel, .forecast-panel { padding: 16px; }
+    .details-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .search-panel { flex-direction: column; gap: 8px; }
+    .geo-button, .search-button { width: 100%; padding: 14px; }
+    .daily-row { padding: 12px; font-size: 13px; }
+    .daily-date { width: 80px; }
+    .daily-condition-box { width: 110px; }
+    .daily-row-text { display: none; } /* Hide descriptions on mobile arrays to maximize whitespace margins */
 }
